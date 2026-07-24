@@ -1,0 +1,12 @@
+services:
+  hme-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - HME_API_KEY=${HME_API_KEY:?HME_API_KEY must be set — see .env.example}
+      - ICLOUD_HME_CONFIG=/data/hme-config.json
+      - HME_STATE_DIR=/data/state
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

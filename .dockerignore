@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+state/
+data/
+hme-config.json
+*.csv
+web_app.*.log
+.git/
+.gitignore
+.claude/

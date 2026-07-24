@@ -1,0 +1,10 @@
+hme-config.json
+.env
+*.csv
+state/
+data/
+web_app.*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.claude/

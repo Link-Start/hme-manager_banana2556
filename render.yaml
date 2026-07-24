@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: hme-manager
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      # Render generates a strong random value and injects it; no secret in git.
+      - key: HME_API_KEY
+        generateValue: true
