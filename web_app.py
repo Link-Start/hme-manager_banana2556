@@ -285,7 +285,7 @@ def _hme_error_code_and_status(message: str) -> tuple[str, HTTPStatus]:
     if "尚未匯入" in message or "Missing required config" in message or "Config file not found" in message:
         return "SESSION_MISSING", HTTPStatus.CONFLICT
     if "HTTP 401" in message or "HTTP 403" in message:
-        return "SESSION_EXPIRED", HTTPStatus.UNAUTHORIZED
+        return "SESSION_EXPIRED", HTTPStatus.CONFLICT
     return "ICLOUD_ERROR", HTTPStatus.BAD_GATEWAY
 
 

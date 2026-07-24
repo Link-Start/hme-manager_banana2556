@@ -5,6 +5,7 @@ from http.server import HTTPServer
 from pathlib import Path
 
 from web_app import (
+    _hme_error_code_and_status,
     create_manager_from_env,
     create_server,
     dispatch_private_api,
@@ -70,6 +71,12 @@ class WebAppTests(unittest.TestCase):
         self.assertEqual(payload["data"], {"status": "ok"})
         self.assertIsNone(payload["error"])
         self.assertEqual(payload["meta"]["service"], "hme-manager")
+
+    def test_expired_icloud_session_is_not_api_key_unauthorized(self):
+        code, status = _hme_error_code_and_status("HTTP 401: Invalid global session")
+
+        self.assertEqual(code, "SESSION_EXPIRED")
+        self.assertEqual(status, HTTPStatus.CONFLICT)
 
     def test_render_index_markup_and_static_assets(self):
         html = render_index()
