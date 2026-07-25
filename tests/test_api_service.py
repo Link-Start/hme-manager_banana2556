@@ -1,4 +1,7 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from api_service import (
     create_alias,
@@ -147,6 +150,30 @@ class ApiServiceTests(unittest.TestCase):
     def test_import_session_requires_curl_text(self):
         with self.assertRaisesRegex(ValueError, "curl_text"):
             import_session(FakeManager(), {"curl_text": ""})
+
+    def test_import_session_applies_china_region(self):
+        curl_text = (
+            "curl 'https://p119-maildomainws.icloud.com/v2/hme/list?"
+            "clientBuildNumber=2614Build17&clientMasteringNumber=2614Build17&"
+            "clientId=client-1&dsid=608658063' "
+            "-b 'X-APPLE-WEBAUTH-USER=user; X-APPLE-WEBAUTH-TOKEN=token; "
+            "X-APPLE-DS-WEB-SESSION-TOKEN=session'"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            manager = FakeManager()
+            manager.config_path = Path(tmp) / "hme-config.json"
+            manager.metadata_path = Path(tmp) / "state" / "hme-session.json"
+
+            response = import_session(
+                manager,
+                {"curl_text": curl_text, "icloud_region": "china"},
+            )
+            saved = json.loads(manager.config_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(response["data"]["icloudRegion"], "china")
+        self.assertEqual(response["data"]["host"], "p119-maildomainws.icloud.com.cn")
+        self.assertEqual(saved["host"], "p119-maildomainws.icloud.com.cn")
+        self.assertEqual(saved["origin"], "https://www.icloud.com.cn")
 
     def test_export_aliases_csv_returns_csv_string(self):
         result = export_aliases_csv(FakeClient())

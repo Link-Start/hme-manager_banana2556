@@ -58,6 +58,22 @@ class HmeClientTests(unittest.TestCase):
         with self.assertRaisesRegex(HmeError, "cookie"):
             load_config(None, env={"ICLOUD_HME_HOST": "p119-maildomainws.icloud.com"})
 
+    def test_load_config_uses_china_web_domains_for_cn_host(self):
+        config = load_config(
+            None,
+            env={
+                "ICLOUD_HME_HOST": "p119-maildomainws.icloud.com.cn",
+                "ICLOUD_HME_DSID": "608658063",
+                "ICLOUD_HME_CLIENT_ID": "client-1",
+                "ICLOUD_HME_CLIENT_BUILD_NUMBER": "2614Build17",
+                "ICLOUD_HME_CLIENT_MASTERING_NUMBER": "2614Build17",
+                "ICLOUD_HME_COOKIE": "SESSION=ok",
+            },
+        )
+
+        self.assertEqual(config.origin, "https://www.icloud.com.cn")
+        self.assertEqual(config.referer, "https://www.icloud.com.cn/")
+
     def test_list_aliases_calls_v2_list_and_returns_aliases(self):
         transport = FakeTransport(
             [

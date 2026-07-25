@@ -17,6 +17,7 @@
 - 管理「隱藏我的電子郵件」信箱：建立、列出、停用、啟用、刪除與 CSV 匯出。
 - 固定格式的 HTTP API；所有 `/v1/*` 皆以 `X-API-Key` 驗證。
 - Session 只透過 iCloud 網頁請求的 **Copy as cURL (bash)** 或 HAR 匯入，不接收 Apple ID、密碼或 2FA。
+- Session 匯入可切換 **國際版**與**中國大陸版**；大陸版會使用 `icloud.com.cn` 服務域名。
 - **自動刷新**預設啟用，每 10 分鐘使用現有 Session 保活；失效時自動停用。
 - 響應式工作台：**信箱清單**、**API Builder**、**Session & 自動刷新**，支援亮／暗主題與手機版。
 - 純 Python 標準庫、**零第三方相依**；支援本機、Docker 與 Render。
@@ -73,10 +74,10 @@ docker compose up -d --build
 
 ### 4. 匯入 Session
 
-1. 前往 [iCloud+](https://www.icloud.com/icloudplus/)，開啟 **Hide My Email（隱藏我的電子郵件）**。
+1. 前往國際版 [iCloud+](https://www.icloud.com/icloudplus/) 或中國大陸版 [iCloud+](https://www.icloud.com.cn/icloudplus/)，開啟 **Hide My Email（隱藏我的電子郵件）**。
 2. 按 **F12** 開啟 DevTools → Network，找到包含 `list?clientBuildNumber` 的請求。
 3. 對該請求選擇 **Copy as cURL (bash)**；也可匯出包含 request cookies 的 HAR。
-4. 到後台的 **Session & 自動刷新** → **手動匯入 Session** 貼上並送出。
+4. 到後台的 **Session & 自動刷新** → **手動匯入 Session**，選擇相符的 iCloud 服務區域後貼上並送出。
 
 ## API
 
@@ -87,7 +88,7 @@ docker compose up -d --build
 | GET | `/health` | 健康檢查 |
 | GET | `/v1/session/status` | 目前 Session 狀態 |
 | POST | `/v1/session/refresh` | 用現有 Session 做一次低風險檢查 |
-| POST | `/v1/session/import` | 匯入 Session（body：`{"curl_text": "..."}`） |
+| POST | `/v1/session/import` | 匯入 Session（body：`{"curl_text": "...", "icloud_region": "international"}`；亦可使用 `china`） |
 | GET | `/v1/aliases` | 列出信箱 |
 | POST | `/v1/aliases` | 建立信箱（body：`{"label": "...", "note": "..."}`） |
 | POST | `/v1/aliases/{id}/disable` · `/enable` · `/delete` | 停用 / 啟用 / 刪除 |

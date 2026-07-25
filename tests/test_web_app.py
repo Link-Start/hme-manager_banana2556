@@ -117,6 +117,9 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("importCurl", html)
         self.assertIn("手動匯入 Session", html)
         self.assertIn("https://www.icloud.com/icloudplus/", html)
+        self.assertIn('name="icloudRegion" value="international" checked', html)
+        self.assertIn('name="icloudRegion" value="china"', html)
+        self.assertIn("中國大陸版", html)
         self.assertIn("list?clientBuildNumber", html)
         self.assertIn("Copy as cURL (bash)", html)
         # api key modal
@@ -155,6 +158,8 @@ class WebAppTests(unittest.TestCase):
         self.assertNotIn("/v1/auth/", app_js)
         self.assertIn("/v1/auto-refresh", app_js)
         self.assertIn("/v1/session/import", app_js)
+        self.assertIn("icloud_region: icloudRegion", app_js)
+        self.assertIn("https://www.icloud.com.cn/icloudplus/", app_js)
         self.assertIn("hme-api-key", app_js)
         self.assertIn("toggleTheme", app_js)
         self.assertIn("hme-theme", app_js)
@@ -175,6 +180,7 @@ class WebAppTests(unittest.TestCase):
         self.assertIn("#apiKeyModal", app_css)
         self.assertIn(".session-indicator.ok", app_css)
         self.assertIn(".alias-toolbar", app_css)
+        self.assertIn(".icloud-region-switch", app_css)
         self.assertIn(".logout-label { display: none; }", app_css)
 
     def _auto_refresh_manager(self, tmp):

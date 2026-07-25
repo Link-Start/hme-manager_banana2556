@@ -298,6 +298,26 @@ tbody tr:hover { background: var(--panel-2); }
 #autoRefreshInterval { max-width: 200px; }
 .auto-refresh-actions { justify-content: flex-end; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--soft-line); }
 .import-card { margin-top: 16px; }
+.icloud-region-selector { margin: 0 0 16px; padding: 0; border: 0; }
+.icloud-region-selector legend { margin-bottom: 8px; color: var(--ink); font-size: 13px; font-weight: 600; }
+.icloud-region-switch {
+  display: inline-grid; grid-template-columns: repeat(2, minmax(110px, 1fr)); gap: 3px;
+  padding: 3px; border: 1px solid var(--soft-line); border-radius: 10px; background: var(--panel-2);
+}
+.icloud-region-option { position: relative; cursor: pointer; }
+.icloud-region-option input {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap;
+}
+.icloud-region-option span {
+  display: flex; min-height: 34px; align-items: center; justify-content: center;
+  padding: 0 14px; border-radius: 7px; color: var(--muted); font-size: 13px; font-weight: 600;
+  transition: background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.icloud-region-option input:checked + span { background: var(--panel); color: var(--accent); box-shadow: var(--shadow); }
+.icloud-region-option input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.region-hint { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+.region-hint code { font-family: Consolas, "Cascadia Mono", "Courier New", monospace; }
 .card-hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .card-hint code { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
 .card-hint a { color: var(--accent-strong); }
@@ -305,6 +325,10 @@ tbody tr:hover { background: var(--panel-2); }
 .import-steps li + li { margin-top: 6px; }
 #importCurl { min-height: 130px; margin-bottom: 12px; font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: 12px; }
 #importResult { margin-top: 12px; }
+
+@media (max-width: 520px) {
+  .icloud-region-switch { display: grid; width: 100%; grid-template-columns: 1fr 1fr; }
+}
 
 /* ---------- modal ---------- */
 #apiKeyModal {

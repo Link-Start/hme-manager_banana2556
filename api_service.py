@@ -52,10 +52,17 @@ def import_session(manager: Any, payload: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("curl_text is required")
     from session_import import parse_import_text, save_imported_session
 
-    config = parse_import_text(curl_text)
+    icloud_region = str(payload.get("icloud_region", "international")).strip().lower()
+    config = parse_import_text(curl_text, icloud_region)
     save_imported_session(config, Path(manager.config_path), Path(manager.metadata_path))
     manager.metadata = manager._load_metadata()
-    return ok_response({"imported": True})
+    return ok_response(
+        {
+            "imported": True,
+            "icloudRegion": icloud_region,
+            "host": config["host"],
+        }
+    )
 
 
 def export_aliases_csv(client: Any) -> str:

@@ -189,8 +189,22 @@
           </div>
           <section class="card import-card">
             <h3>手動匯入 Session</h3>
+            <fieldset class="icloud-region-selector" aria-describedby="icloudRegionHint">
+              <legend>iCloud 服務區域</legend>
+              <div class="icloud-region-switch">
+                <label class="icloud-region-option">
+                  <input type="radio" name="icloudRegion" value="international" checked>
+                  <span>國際版</span>
+                </label>
+                <label class="icloud-region-option">
+                  <input type="radio" name="icloudRegion" value="china">
+                  <span>中國大陸版</span>
+                </label>
+              </div>
+              <p id="icloudRegionHint" class="region-hint">使用 <code>icloud.com</code> 服務域名。</p>
+            </fieldset>
             <ol class="card-hint import-steps">
-              <li>前往 <a href="https://www.icloud.com/icloudplus/" target="_blank" rel="noopener">iCloud+</a>，開啟 <strong>Hide My Email（隱藏我的電子郵件）</strong>。</li>
+              <li>前往 <a id="icloudPortalLink" href="https://www.icloud.com/icloudplus/" target="_blank" rel="noopener">iCloud+</a>，開啟 <strong>Hide My Email（隱藏我的電子郵件）</strong>。</li>
               <li>按 <strong>F12</strong> 開啟 DevTools → Network，找到包含 <code>list?clientBuildNumber</code> 的請求。</li>
               <li>對該請求選擇 <strong>Copy as cURL (bash)</strong>，貼到下方；也可貼上包含 request cookies 的 HAR JSON。</li>
             </ol>

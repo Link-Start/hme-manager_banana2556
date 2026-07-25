@@ -12,18 +12,27 @@ CORE_SESSION_COOKIE_NAMES = (
     "X-APPLE-WEBAUTH-TOKEN",
 )
 
+ICLOUD_REGION_INTERNATIONAL = "international"
+ICLOUD_REGION_CHINA = "china"
+SUPPORTED_ICLOUD_REGIONS = {ICLOUD_REGION_INTERNATIONAL, ICLOUD_REGION_CHINA}
 
-def parse_hme_curl(curl_text: str) -> dict[str, str]:
+
+def parse_hme_curl(
+    curl_text: str,
+    icloud_region: str = ICLOUD_REGION_INTERNATIONAL,
+) -> dict[str, str]:
+    region = _normalize_icloud_region(icloud_region)
     url = _extract_url(curl_text)
     parsed = urlparse(url)
-    if not parsed.netloc.endswith("-maildomainws.icloud.com"):
-        raise ValueError("cURL URL must be a maildomainws.icloud.com HME request")
+    source_host = parsed.hostname or ""
+    if not _is_maildomainws_host(source_host):
+        raise ValueError("cURL URL must be a maildomainws.icloud.com or maildomainws.icloud.com.cn HME request")
     if not (parsed.path.startswith("/v2/hme/list") or parsed.path.startswith("/v1/hme/")):
         raise ValueError("cURL URL must point to an HME endpoint such as /v2/hme/list")
 
     query = parse_qs(parsed.query)
     config = {
-        "host": parsed.netloc,
+        "host": _host_for_icloud_region(source_host, region),
         "dsid": _query_value(query, "dsid"),
         "clientId": _query_value(query, "clientId"),
         "clientBuildNumber": _query_value(query, "clientBuildNumber"),
@@ -35,20 +44,25 @@ def parse_hme_curl(curl_text: str) -> dict[str, str]:
     _add_optional_curl_header(config, curl_text, "Origin", "origin")
     _add_optional_curl_header(config, curl_text, "Referer", "referer")
     _add_optional_curl_header(config, curl_text, "User-Agent", "userAgent")
+    _apply_icloud_region(config, region)
     return config
 
 
-def parse_import_text(text: str) -> dict[str, str]:
+def parse_import_text(
+    text: str,
+    icloud_region: str = ICLOUD_REGION_INTERNATIONAL,
+) -> dict[str, str]:
+    region = _normalize_icloud_region(icloud_region)
     stripped = text.strip()
     if not stripped:
         raise ValueError("Paste a cURL command or HAR JSON first")
     try:
         data = json.loads(stripped)
     except json.JSONDecodeError:
-        return parse_hme_curl(text)
+        return parse_hme_curl(text, region)
     if isinstance(data, dict) and isinstance(data.get("log"), dict):
-        return _parse_har(data)
-    return parse_hme_curl(text)
+        return _parse_har(data, region)
+    return parse_hme_curl(text, region)
 
 
 def save_imported_session(config: dict[str, str], config_path: Path, metadata_path: Path) -> None:
@@ -76,7 +90,7 @@ def _extract_url(curl_text: str) -> str:
     raise ValueError("Could not find URL in cURL text")
 
 
-def _parse_har(data: dict) -> dict[str, str]:
+def _parse_har(data: dict, icloud_region: str) -> dict[str, str]:
     entries = data.get("log", {}).get("entries", [])
     if not isinstance(entries, list):
         raise ValueError("HAR log.entries must be a list")
@@ -88,10 +102,10 @@ def _parse_har(data: dict) -> dict[str, str]:
             continue
         url = str(request.get("url", ""))
         parsed = urlparse(url)
-        if parsed.netloc.endswith("-maildomainws.icloud.com") and parsed.path.startswith("/v2/hme/list"):
+        if _is_maildomainws_host(parsed.hostname or "") and parsed.path.startswith("/v2/hme/list"):
             chosen_request = request
             break
-        if chosen_request is None and parsed.netloc.endswith("-maildomainws.icloud.com") and "/hme/" in parsed.path:
+        if chosen_request is None and _is_maildomainws_host(parsed.hostname or "") and "/hme/" in parsed.path:
             chosen_request = request
 
     if chosen_request is None:
@@ -103,7 +117,7 @@ def _parse_har(data: dict) -> dict[str, str]:
     cookie = _extract_cookie_from_har_request(chosen_request)
     _require_core_session_cookies(cookie)
     config = {
-        "host": parsed.netloc,
+        "host": _host_for_icloud_region(parsed.hostname or "", icloud_region),
         "dsid": _query_value(query, "dsid"),
         "clientId": _query_value(query, "clientId"),
         "clientBuildNumber": _query_value(query, "clientBuildNumber"),
@@ -114,7 +128,59 @@ def _parse_har(data: dict) -> dict[str, str]:
     _add_optional_har_header(config, chosen_request, "Origin", "origin")
     _add_optional_har_header(config, chosen_request, "Referer", "referer")
     _add_optional_har_header(config, chosen_request, "User-Agent", "userAgent")
+    _apply_icloud_region(config, icloud_region)
     return config
+
+
+def _normalize_icloud_region(icloud_region: str) -> str:
+    region = str(icloud_region).strip().lower()
+    if region not in SUPPORTED_ICLOUD_REGIONS:
+        raise ValueError("icloud_region must be 'international' or 'china'")
+    return region
+
+
+def _is_maildomainws_host(host: str) -> bool:
+    lowered = host.lower()
+    return lowered.endswith("-maildomainws.icloud.com") or lowered.endswith("-maildomainws.icloud.com.cn")
+
+
+def _host_for_icloud_region(host: str, icloud_region: str) -> str:
+    lowered = host.lower()
+    if lowered.endswith(".icloud.com.cn"):
+        international_host = host[:-3]
+    elif lowered.endswith(".icloud.com"):
+        international_host = host
+    else:
+        raise ValueError("iCloud host must end with .icloud.com or .icloud.com.cn")
+    if icloud_region == ICLOUD_REGION_CHINA:
+        return international_host + ".cn"
+    return international_host
+
+
+def _apply_icloud_region(config: dict[str, str], icloud_region: str) -> None:
+    site_host = _host_for_icloud_region("www.icloud.com", icloud_region)
+    default_origin = f"https://{site_host}"
+    if config.get("origin") or icloud_region == ICLOUD_REGION_CHINA:
+        config["origin"] = _site_url_for_icloud_region(config.get("origin"), icloud_region, default_origin)
+    if config.get("referer") or icloud_region == ICLOUD_REGION_CHINA:
+        config["referer"] = _site_url_for_icloud_region(
+            config.get("referer"),
+            icloud_region,
+            default_origin + "/",
+        )
+
+
+def _site_url_for_icloud_region(value: str | None, icloud_region: str, default: str) -> str:
+    if not value:
+        return default
+    parsed = urlparse(value)
+    if parsed.scheme.lower() != "https" or (parsed.hostname or "").lower() not in {
+        "www.icloud.com",
+        "www.icloud.com.cn",
+    }:
+        return default
+    host = _host_for_icloud_region(parsed.hostname or "", icloud_region)
+    return parsed._replace(netloc=host).geturl()
 
 
 def _extract_cookie_from_har_request(request: dict) -> str:

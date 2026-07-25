@@ -33,8 +33,20 @@ const sessionStateEl = $("sessionState");
 const autoRefreshEnabledEl = $("autoRefreshEnabled");
 const autoRefreshIntervalEl = $("autoRefreshInterval");
 const autoRefreshStatusEl = $("autoRefreshStatus");
+const icloudPortalLinkEl = $("icloudPortalLink");
+const icloudRegionHintEl = $("icloudRegionHint");
 
 const VIEW_TITLES = { aliases: "信箱清單", builder: "API Builder", session: "Session & 自動刷新" };
+const ICLOUD_REGIONS = {
+  international: {
+    portalUrl: "https://www.icloud.com/icloudplus/",
+    hint: "使用 icloud.com 服務域名。"
+  },
+  china: {
+    portalUrl: "https://www.icloud.com.cn/icloudplus/",
+    hint: "使用 icloud.com.cn 服務域名。匯入時會自動在 iCloud 域名後加上 .cn。"
+  }
+};
 
 let aliasRows = [];
 let lastSessionStatus = null;
@@ -440,8 +452,20 @@ async function loadStatus() {
   } catch (error) { /* keep prior status */ }
 }
 
+function selectedICloudRegion() {
+  const selected = document.querySelector('input[name="icloudRegion"]:checked');
+  return selected && ICLOUD_REGIONS[selected.value] ? selected.value : "international";
+}
+
+function updateICloudRegionUi() {
+  const region = ICLOUD_REGIONS[selectedICloudRegion()];
+  icloudPortalLinkEl.href = region.portalUrl;
+  icloudRegionHintEl.textContent = region.hint;
+}
+
 async function submitImportSession() {
   const curlText = ($("importCurl").value || "").trim();
+  const icloudRegion = selectedICloudRegion();
   const resultEl = $("importResult");
   resultEl.hidden = false;
   if (!curlText) { resultEl.textContent = "請先貼上 list?clientBuildNumber 請求的 Copy as cURL (bash) 或 HAR JSON。"; return; }
@@ -449,7 +473,7 @@ async function submitImportSession() {
   const data = await request("/v1/session/import", {
     method: "POST",
     headers: apiHeaders(),
-    body: JSON.stringify({ curl_text: curlText })
+    body: JSON.stringify({ curl_text: curlText, icloud_region: icloudRegion })
   });
   if (!data) { resultEl.textContent = "匯入失敗，請確認貼上的內容包含 cookie。"; return; }
   resultEl.textContent = JSON.stringify(data.data, null, 2);
@@ -532,6 +556,10 @@ $("refreshSessionBtn").addEventListener("click", () => runSelectedOperation("ref
 $("saveAutoRefreshBtn").addEventListener("click", saveAutoRefreshSettings);
 $("runAutoRefreshBtn").addEventListener("click", runAutoRefreshNow);
 $("importSubmitBtn").addEventListener("click", submitImportSession);
+document.querySelectorAll('input[name="icloudRegion"]').forEach((input) => {
+  input.addEventListener("change", updateICloudRegionUi);
+});
+updateICloudRegionUi();
 
 // ---------- theme toggle ----------
 const THEME_KEY = "hme-theme";

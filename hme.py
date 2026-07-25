@@ -77,6 +77,8 @@ def load_config(path: str | Path | None = DEFAULT_CONFIG_PATH, env: Mapping[str,
             data[key] = env[env_key]
 
     host = _clean_host(_value(data, "host", default=""))
+    china_region = host.lower().endswith(".icloud.com.cn")
+    default_origin = "https://www.icloud.com.cn" if china_region else "https://www.icloud.com"
     config = HmeConfig(
         host=host,
         dsid=_value(data, "dsid", default=""),
@@ -85,8 +87,8 @@ def load_config(path: str | Path | None = DEFAULT_CONFIG_PATH, env: Mapping[str,
         client_mastering_number=_value(data, "clientMasteringNumber", "client_mastering_number", default=""),
         cookie=_value(data, "cookie", default=""),
         lang_code=_value(data, "langCode", "lang_code", default="zh-tw"),
-        origin=_value(data, "origin", default="https://www.icloud.com"),
-        referer=_value(data, "referer", default="https://www.icloud.com/"),
+        origin=_value(data, "origin", default=default_origin),
+        referer=_value(data, "referer", default=default_origin + "/"),
         user_agent=_value(data, "userAgent", "user_agent", default=DEFAULT_USER_AGENT),
     )
     _validate_config(config)
